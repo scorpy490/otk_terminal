@@ -198,6 +198,7 @@
 
             Console.WriteLine("=============================================================================================")
             Console.WriteLine("Предъявление:")
+            Console.WriteLine("Всего: " & vbTab & vbTab & kup + kdef)
             Console.WriteLine("Упаковано: " & vbTab & vbTab & kup)
             Console.WriteLine("Браков: " & vbTab & vbTab & kdef)
             Console.WriteLine("Не существует: " & vbTab & vbTab & d)
