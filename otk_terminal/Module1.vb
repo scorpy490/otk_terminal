@@ -18,7 +18,7 @@
         knsp = 0 ' кол-во несопоставленных
         kup = 0 'кол-во упаковок
         kdef = 0 ' кол дефектов упаковки
-        d = 0 ' не найденых ШК
+        d = 0 ' не найденых ШК22
         Dim CnStr = "Provider=SQLOLEDB;Server=vega;Database=otk;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
         folder = fso.GetFolder("d:\Terminal\out")
         k = 0
