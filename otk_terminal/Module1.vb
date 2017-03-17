@@ -19,7 +19,7 @@
         kup = 0 'кол-во упаковок
         kdef = 0 ' кол дефектов упаковки
         d = 0 ' не найденых ШК22
-        Dim CnStr = "Provider=SQLOLEDB;Server=vega;Database=otk;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
+        Dim CnStr = "Provider=SQLOLEDB;Server=srv-otk;Database=otk;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
         folder = fso.GetFolder("d:\Terminal\out")
         k = 0
         For Each file In folder.Files
@@ -162,7 +162,7 @@
                     kup = kup + 1
 
                 Else
-                    sqlstr = "Update dbo.Изделия SET [predjvl]='true', [DataUp] ='" & CDate(arr(0) & " " & arr(1)) & "', DefUp =" & arr(3) & ", [NomUp]=null WHERE [shtr_kod]=" & arr(2)
+                    sqlstr = "Update dbo.Изделия SET [predjvl]='false', [DataUp] ='" & CDate(arr(0) & " " & arr(1)) & "', DefUp =" & arr(3) & ", [NomUp]=null WHERE [shtr_kod]=" & arr(2)
                     kdef = kdef + 1
 
                 End If
@@ -197,7 +197,7 @@
         If kup > 0 Or kdef > 0 Or d > 0 Then
 
             Console.WriteLine("=============================================================================================")
-            Console.WriteLine("Предъявление:")
+            Console.WriteLine("Упаковка:")
             Console.WriteLine("Всего: " & vbTab & vbTab & kup + kdef)
             Console.WriteLine("Упаковано: " & vbTab & vbTab & kup)
             Console.WriteLine("Браков: " & vbTab & vbTab & kdef)
