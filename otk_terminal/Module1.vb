@@ -4,21 +4,20 @@ Imports System.Collections.Specialized
 Module Module1
     Dim CnStr = "Provider=SQLOLEDB;Server=srv-otk;Database=otk;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
     Dim CnStr2 = "Provider=SQLOLEDB;Server=srv15;Database=pech;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
-    Dim ConnSQL, cnnPech, conn_fl, dk, d, kpr, knsp, kdef, kup
+    Dim ConnSQL, cnnPech, conn_fl, dk, d, kpr, knsp, kdef, kup, goreem, repfl
     ''' <summary>
     ''' 
     ''' </summary>
     Sub Main()
         Dim Cipher As Object
-        Dim Cnins, logfl, ts1, dk, ps, folder, sqlstr, fl, path, buf, arr, k, rez
-        Dim fso, repfl, i
+        Dim Cnins, logfl, ts1, ps, folder, sqlstr, fl, path, buf, arr, k, rez
+        Dim fso, i
         Dim dbins As New StringCollection
+        goreem = 0
         conn_fl = True
         fso = CreateObject("Scripting.FileSystemObject")
         'fsot = CreateObject("Scripting.FileSystemObject")
-        repfl = fso.OpenTextFile("d:\Terminal\tmp.txt", 2, True)
         Dim innkpp = "0"
-        repfl.writeline(DateTime.Now)
         i = 0
         path = ""
         fl = ""
@@ -43,6 +42,7 @@ Module Module1
             System.Threading.Thread.Sleep(7000)
             Exit Sub
         End If
+        repfl = fso.OpenTextFile("d:\Terminal\tmp.txt", 2, True)
         ConnSQL = CreateObject("ADODB.Connection")
         cnnPech = CreateObject("ADODB.Connection")
         ConnSQL.ConnectionString = CnStr
@@ -59,7 +59,13 @@ Module Module1
         Do While Not ts1.AtEndOfStream
             buf = ts1.ReadLine
             arr = Split(buf, ";")
-            If UBound(arr) > 3 Then rez = parse_pr(arr) Else rez = parse_vozvr(arr)
+            If UBound(arr) > 3 Then
+                rez = parse_pr(arr)
+            ElseIf UBound(arr) = 3 Then
+                rez = parse_vozvr(arr)
+            Else
+                rez = parse_goreem(arr)
+            End If
             If rez Is Nothing Then Continue Do
             For Each i In rez
                 dbins.Add(i)
@@ -87,16 +93,23 @@ Module Module1
         sqlstr = Now.ToShortDateString + " " + Now.ToShortTimeString & vbTab & k & vbTab & kdef & vbTab & dk
         logfl.WriteLine(sqlstr)
         logfl.Close
-        repfl.WriteLine("Готово! ")
-        repfl.WriteLine("Всего принято:" & vbTab & vbTab & kpr)
-        repfl.WriteLine("Не сопоставлено:" & vbTab & knsp)
-        repfl.WriteLine("Дублей:" & vbTab & vbTab & vbTab & dk)
+        If kpr > 0 Then
+            repfl.WriteLine("Готово! ")
+            repfl.WriteLine("Всего принято:" & vbTab & vbTab & kpr)
+            repfl.WriteLine("Не сопоставлено:" & vbTab & knsp)
+            repfl.WriteLine("Дублей:" & vbTab & vbTab & vbTab & dk)
+        End If
         If kup > 0 Or d > 0 Then
 
             repfl.WriteLine("=============================================================================================")
             repfl.WriteLine("Возврат:")
             repfl.WriteLine("Всего:      " & vbTab & vbTab & kup + d)
             repfl.WriteLine("Не найдено: " & vbTab & vbTab & d)
+        End If
+        If goreem > 0 Then
+            repfl.WriteLine("=============================================================================================")
+            repfl.WriteLine("Отправлено на реэмалирование:")
+            repfl.WriteLine("Всего:      " & vbTab & vbTab & goreem)
         End If
         repfl.Close
         'System.Threading.Thread.Sleep(20000)
@@ -109,7 +122,7 @@ Module Module1
 
     Function parse_pr(arr As Array)
         Dim rez As New StringCollection
-        Dim reem, ps, dt, smena, yestoday, dtsmena, knsp, kodObj, famobj, q1
+        Dim reem, ps, dt, smena, yestoday, dtsmena, kodObj, famobj, q1
         Dim def(2)
         Dim sqlstr = "Select [TYPE], [razm], [ruchky],[pechid] from dbo.typeizd where [shtr]=" & arr(3)
         'MsgBox(sqlstr)
@@ -213,12 +226,12 @@ Module Module1
 
 
         sqlstr = "SELECT [shtr_kod] From dbo.[Изделия] Where [shtr_kod]=" & arr(2)
-        'Dim rs4 = ConnSQL.Execute(sqlstr)
-        'If rs4.EOF = False Then
-        '    Console.WriteLine(arr(2) & vbTab & "Дубль!")
-        '    dk = dk + 1
-        '    Exit Function
-        'End If
+        Dim rs4 = ConnSQL.Execute(sqlstr)
+        If rs4.EOF = False Then
+            repfl.WriteLine(arr(2) & vbTab & "Дубль!")
+            dk = dk + 1
+            'Exit Function
+        End If
         If arr(5) = "" Then arr(5) = "0"
 
         dt = CDate(arr(0) & " " & arr(1))
@@ -268,6 +281,14 @@ Module Module1
         'ConnSQL.Execute(sqlstr)
         sqlstr = "Update dbo.Изделия SET [Data_vozvr] ='" & CDate(arr(0) & " " & arr(1)) & "', [vozvr_inn] ='" & innkpp & "' WHERE [shtr_kod]=" & arr(2)
         rez.Add(sqlstr)
+        Return rez
+    End Function
+
+    Function parse_goreem(arr As Array)
+        Dim sqlstr = "Update dbo.Изделия SET goreem =1 WHERE [shtr_kod]=" & arr(2)
+        Dim rez As New StringCollection
+        rez.Add(sqlstr)
+        goreem = goreem + 1
         Return rez
     End Function
 
