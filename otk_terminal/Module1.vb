@@ -149,7 +149,7 @@ Module Module1
         End If
 
         If arr(7) = "" Then arr(7) = "0"
-
+        'sqlstr = "SELECT [Фамилия] From dbo.[Обжигальщики] WHERE "
         sqlstr = "Select [Data], [Контролер1], [Контролер2], [Смена] From dbo.smena_def Where id = 1"
         Dim rs1 = ConnSQL.execute(sqlstr)
         'dtsmena = CDate(rs1(0).value.ToString).ToString("yyyyMMdd")
@@ -258,8 +258,8 @@ Module Module1
                 q1.MoveNext
             Loop
         End If
-        sqlstr = "Insert Into dbo.Изделия ([Номер_бригады],[КодОбж],[Помощник],[Дата_период], [Дата],  [Контролер ОТК], [Контроллер ОТК2], [Мастер смены], [Номер_печи], [Реэмаоирование], [Сорт], [ID_Brak], [shtr_kod], [Смена], [Емкость],[Емкость_верх], [Емкость_борт], [Порядк_номер_изд], [term_pr], [dop_param], [pskstr], [kod_izd]) SELECT " _
-            & brig + "," + kodObj + " , '" + pom + "' ,'" + dt & "' ,'" & dtsmena.ToString & "','" & Contr1 & "' ,'" & Contr2 & "' ,'" & mas & "' ," & nom_pechi + " ,'" + reem.ToString + "' ," + arr(6) + " ," + def(0) + " ," + arr(2) + ", " + smena + ", " + em_down + "," + em_up + "," + em_bort + "," + arr(5) & ", 'True'," & def(1) & ",'" & ps.ToString & "'," + arr(3)
+        sqlstr = "Insert Into dbo.Изделия ([Номер_бригады],[КодОбж],[odj_str][Помощник],[Дата_период], [Дата],  [Контролер ОТК], [Контроллер ОТК2], [Мастер смены], [Номер_печи], [Реэмаоирование], [Сорт], [ID_Brak], [shtr_kod], [Смена], [Емкость],[Емкость_верх], [Емкость_борт], [Порядк_номер_изд], [term_pr], [dop_param], [pskstr], [kod_izd]) SELECT " _
+            & brig + "," + kodObj + ",'" + famobj + "' , '" + pom + "' ,'" + dt & "' ,'" & dtsmena.ToString & "','" & Contr1 & "' ,'" & Contr2 & "' ,'" & mas & "' ," & nom_pechi + " ,'" + reem.ToString + "' ," + arr(6) + " ," + def(0) + " ," + arr(2) + ", " + smena + ", " + em_down + "," + em_up + "," + em_bort + "," + arr(5) & ", 'True'," & def(1) & ",'" & ps.ToString & "'," + arr(3)
         rez.Add(sqlstr)
         Return rez
 
