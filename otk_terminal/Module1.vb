@@ -4,7 +4,7 @@ Imports System.Collections.Specialized
 Module Module1
     Dim CnStr = "Provider=SQLOLEDB;Server=srv-otk;Database=otk;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
     Dim CnStr2 = "Provider=SQLOLEDB;Server=srv15;Database=pech;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
-    Dim ConnSQL, cnnPech, conn_fl, dk, d, kpr, knsp, kdef, kup, goreem, repfl
+    Dim ConnSQL, cnnPech, conn_fl, dk, d, kpr, knsp, kdef, kup, goreem
     ''' <summary>
     ''' 
     ''' </summary>
@@ -42,7 +42,7 @@ Module Module1
             System.Threading.Thread.Sleep(7000)
             Exit Sub
         End If
-        repfl = fso.OpenTextFile("d:\Terminal\tmp.txt", 2, True)
+        'repfl = fso.OpenTextFile("d:\Terminal\tmp.txt", 2, True)
         ConnSQL = CreateObject("ADODB.Connection")
         cnnPech = CreateObject("ADODB.Connection")
         ConnSQL.ConnectionString = CnStr
@@ -80,8 +80,10 @@ Module Module1
         Cnins.Open
         Cnins.BeginTrans
         For Each i In dbins
-            'Cnins.execute = dbins(i)
-            repfl.WriteLine(i)
+            'Console.WriteLine(i)
+            sqlstr = i
+            Cnins.execute(sqlstr)
+            'repfl.WriteLine(i)
         Next
         Cnins.CommitTrans
         Cnins.Close
@@ -94,26 +96,26 @@ Module Module1
         logfl.WriteLine(sqlstr)
         logfl.Close
         If kpr > 0 Then
-            repfl.WriteLine("Готово! ")
-            repfl.WriteLine("Всего принято:" & vbTab & vbTab & kpr)
-            repfl.WriteLine("Не сопоставлено:" & vbTab & knsp)
-            repfl.WriteLine("Дублей:" & vbTab & vbTab & vbTab & dk)
+            Console.WriteLine("Готово! ")
+            Console.WriteLine("Всего принято:" & vbTab & vbTab & kpr)
+            Console.WriteLine("Не сопоставлено:" & vbTab & knsp)
+            Console.WriteLine("Дублей:" & vbTab & vbTab & vbTab & dk)
         End If
         If kup > 0 Or d > 0 Then
 
-            repfl.WriteLine("=============================================================================================")
-            repfl.WriteLine("Возврат:")
-            repfl.WriteLine("Всего:      " & vbTab & vbTab & kup + d)
-            repfl.WriteLine("Не найдено: " & vbTab & vbTab & d)
+            Console.WriteLine("=============================================================================================")
+            Console.WriteLine("Возврат:")
+            Console.WriteLine("Всего:      " & vbTab & vbTab & kup + d)
+            Console.WriteLine("Не найдено: " & vbTab & vbTab & d)
         End If
         If goreem > 0 Then
-            repfl.WriteLine("=============================================================================================")
-            repfl.WriteLine("Отправлено на реэмалирование:")
-            repfl.WriteLine("Всего:      " & vbTab & vbTab & goreem)
+            Console.WriteLine("=============================================================================================")
+            Console.WriteLine("Отправлено на реэмалирование:")
+            Console.WriteLine("Всего:      " & vbTab & vbTab & goreem)
         End If
-        repfl.Close
-        'System.Threading.Thread.Sleep(20000)
-        Process.Start("d:\Terminal\tmp.txt", "Notepad.exe")
+        'repfl.Close
+        System.Threading.Thread.Sleep(5000)
+        'Process.Start("d:\Terminal\tmp.txt", "Notepad.exe")
 
         'Console.ReadLine()
 
@@ -228,7 +230,7 @@ Module Module1
         sqlstr = "SELECT [shtr_kod] From dbo.[Изделия] Where [shtr_kod]=" & arr(2)
         Dim rs4 = ConnSQL.Execute(sqlstr)
         If rs4.EOF = False Then
-            repfl.WriteLine(arr(2) & vbTab & "Дубль!")
+            Console.WriteLine(arr(2) & vbTab & "Дубль!")
             dk = dk + 1
             'Exit Function
         End If
@@ -239,9 +241,9 @@ Module Module1
         kpr = kpr + 1
         'Данные печи
         If conn_fl = True Then
-            dt = DateAdd(DateInterval.Hour, -12, dt)
+            'dt = DateAdd(DateInterval.Hour, -12, dt)
             sqlstr = "SELECT [DATA_TIME],[ID_OBJIG],[TIME_OBJIG],[ID_PECH],[ID_OBJIGALSHIC],[TIP_VANNA],[COL_VANNA],[TEMP],[TEMP_MIN],[TEMP_AVG],[TEMP_MAX],[TIME_ITERATION] FROM [pech].[dbo].[WORK_PECH] WHERE [ID_OBJIGALSHIC]=" _
-            & arr(4) & " AND [ID_PECH]=" & nom_pechi & " AND [DATA_TIME] >'" & dt & "' AND [COL_VANNA]=" & arr(5)
+            & arr(4) & " AND [ID_PECH]=" & nom_pechi & " AND [DATA_TIME] >'" & DateAdd(DateInterval.Hour, -12, dt) & "' AND [COL_VANNA]=" & arr(5)
             q1 = cnnPech.Execute(sqlstr)
             Do While Not q1.EOF
                 Dim a7 = Replace(q1(7).value.ToString, ",", ".")
@@ -251,8 +253,8 @@ Module Module1
                 'Console.WriteLine(q1(0).value.ToString & vbTab & q1(1).value.ToString & vbTab & q1(2).value.ToString & vbTab & q1(3).value.ToString & vbTab & q1(4).value.ToString & vbTab & q1(5).value.ToString & vbTab & q1(6).value.ToString & vbTab & q1(7).value.ToString)
                 sqlstr = "INSERT INTO [dbo].[WORK_PECH] ([DATA_TIME],[ID_OBJIG],[TIME_OBJIG],[ID_PECH],[ID_OBJIGALSHIC],[TIP_VANNA],[COL_VANNA],[TEMP],[TEMP_MIN],[TEMP_AVG],[TEMP_MAX],[TIME_ITERATION],[shtr]) VALUES ('" & q1(0).value & "'," & q1(1).value & "," & q1(2).value & "," & q1(3).value & "," & q1(4).value & "," & q1(5).value & "," & q1(6).value & "," & a7 & "," & a8 & "," & a9 & "," & a10 & "," & q1(11).value & "," & arr(2) & ")"
                 rez.Add(sqlstr)
-                Console.WriteLine(sqlstr)
-                ConnSQL.Execute = sqlstr
+                'Console.WriteLine(sqlstr)
+                'ConnSQL.Execute = sqlstr
                 q1.MoveNext
             Loop
         End If
