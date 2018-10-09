@@ -258,7 +258,7 @@ Module Module1
                 q1.MoveNext
             Loop
         End If
-        sqlstr = "Insert Into dbo.Изделия ([Номер_бригады],[КодОбж],[odj_str][Помощник],[Дата_период], [Дата],  [Контролер ОТК], [Контроллер ОТК2], [Мастер смены], [Номер_печи], [Реэмаоирование], [Сорт], [ID_Brak], [shtr_kod], [Смена], [Емкость],[Емкость_верх], [Емкость_борт], [Порядк_номер_изд], [term_pr], [dop_param], [pskstr], [kod_izd]) SELECT " _
+        sqlstr = "Insert Into dbo.Изделия ([Номер_бригады],[КодОбж],[obj_str],[Помощник],[Дата_период], [Дата],  [Контролер ОТК], [Контроллер ОТК2], [Мастер смены], [Номер_печи], [Реэмаоирование], [Сорт], [ID_Brak], [shtr_kod], [Смена], [Емкость],[Емкость_верх], [Емкость_борт], [Порядк_номер_изд], [term_pr], [dop_param], [pskstr], [kod_izd]) SELECT " _
             & brig + "," + kodObj + ",'" + famobj + "' , '" + pom + "' ,'" + dt & "' ,'" & dtsmena.ToString & "','" & Contr1 & "' ,'" & Contr2 & "' ,'" & mas & "' ," & nom_pechi + " ,'" + reem.ToString + "' ," + arr(6) + " ," + def(0) + " ," + arr(2) + ", " + smena + ", " + em_down + "," + em_up + "," + em_bort + "," + arr(5) & ", 'True'," & def(1) & ",'" & ps.ToString & "'," + arr(3)
         rez.Add(sqlstr)
         Return rez
@@ -287,7 +287,7 @@ Module Module1
     End Function
 
     Function parse_goreem(arr As Array)
-        Dim sqlstr = "Update dbo.Изделия SET goreem =1 WHERE [shtr_kod]=" & arr(2)
+        Dim sqlstr = "Update dbo.Изделия SET goreem =1 WHERE [shtr_kod]=" & arr(0)
         Dim rez As New StringCollection
         rez.Add(sqlstr)
         goreem = goreem + 1
