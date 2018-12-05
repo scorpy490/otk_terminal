@@ -42,6 +42,10 @@ Module Module1
             System.Threading.Thread.Sleep(7000)
             Exit Sub
         End If
+
+
+
+
         'repfl = fso.OpenTextFile("d:\Terminal\tmp.txt", 2, True)
         ConnSQL = CreateObject("ADODB.Connection")
         cnnPech = CreateObject("ADODB.Connection")
@@ -73,6 +77,7 @@ Module Module1
             Next
 
         Loop
+
         ConnSQL.Close
         If conn_fl = True Then cnnPech.Close
         Cnins = CreateObject("ADODB.Connection")
@@ -150,12 +155,12 @@ Module Module1
 
         If arr(7) = "" Then arr(7) = "0"
         'sqlstr = "SELECT [Фамилия] From dbo.[Обжигальщики] WHERE "
-        sqlstr = "Select [Data], [Контролер1], [Контролер2], [Смена] From dbo.smena_def Where id = 1"
+        sqlstr = "Select [Фамилия] From dbo.[Мастера] Where nom =" & arr(8)
         Dim rs1 = ConnSQL.execute(sqlstr)
         'dtsmena = CDate(rs1(0).value.ToString).ToString("yyyyMMdd")
         'yestoday = DateAdd("d", -1, CDate(rs1(0).value.ToString)).ToString("yyyyMMdd")
-        Dim Contr1 = rs1(1).value.ToString.Trim
-        Dim Contr2 = rs1(2).value.ToString.Trim
+        Dim Contr1 = rs1(0).value.ToString.Trim
+        'Dim Contr2 = rs1(2).value.ToString.Trim
 
         If Now.Hour < 7 Then
             dt = DateAdd("d", -1, Now)
@@ -258,8 +263,8 @@ Module Module1
                 q1.MoveNext
             Loop
         End If
-        sqlstr = "Insert Into dbo.Изделия ([Номер_бригады],[КодОбж],[obj_str],[Помощник],[Дата_период], [Дата],  [Контролер ОТК], [Контроллер ОТК2], [Мастер смены], [Номер_печи], [Реэмаоирование], [Сорт], [ID_Brak], [shtr_kod], [Смена], [Емкость],[Емкость_верх], [Емкость_борт], [Порядк_номер_изд], [term_pr], [dop_param], [pskstr], [kod_izd]) SELECT " _
-            & brig + "," + kodObj + ",'" + famobj + "' , '" + pom + "' ,'" + dt & "' ,'" & dtsmena.ToString & "','" & Contr1 & "' ,'" & Contr2 & "' ,'" & mas & "' ," & nom_pechi + " ,'" + reem.ToString + "' ," + arr(6) + " ," + def(0) + " ," + arr(2) + ", " + smena + ", " + em_down + "," + em_up + "," + em_bort + "," + arr(5) & ", 'True'," & def(1) & ",'" & ps.ToString & "'," + arr(3)
+        sqlstr = "Insert Into dbo.Изделия ([Номер_бригады],[КодОбж],[obj_str],[Помощник],[Дата_период], [Дата],  [Контролер ОТК], [Мастер смены], [Номер_печи], [Реэмаоирование], [Сорт], [ID_Brak], [shtr_kod], [Смена], [Емкость],[Емкость_верх], [Емкость_борт], [Порядк_номер_изд], [term_pr], [dop_param], [pskstr], [kod_izd], [ContrEMO_ID]) SELECT " _
+            & brig + "," + kodObj + ",'" + famobj + "' , '" + pom + "' ,'" + dt & "' ,'" & dtsmena.ToString & "','" & Contr1 & "' ,'" & mas & "' ," & nom_pechi + " ,'" + reem.ToString + "' ," + arr(6) + " ," + def(0) + " ," + arr(2) + ", " + smena + ", " + em_down + "," + em_up + "," + em_bort + "," + arr(5) & ", 'True'," & def(1) & ",'" & ps.ToString & "'," + arr(3) & "," + arr(8)
         rez.Add(sqlstr)
         Return rez
 
@@ -287,7 +292,7 @@ Module Module1
     End Function
 
     Function parse_goreem(arr As Array)
-        Dim sqlstr = "Update dbo.Изделия SET goreem =1 WHERE [shtr_kod]=" & arr(0)
+        Dim sqlstr = "Update dbo.Изделия SET goreem =3, goreamal='true' WHERE [shtr_kod]=" & arr(0)
         Dim rez As New StringCollection
         rez.Add(sqlstr)
         goreem = goreem + 1
