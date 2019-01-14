@@ -4,7 +4,8 @@ Imports System.Collections.Specialized
 Module Module1
     Dim CnStr = "Provider=SQLOLEDB;Server=srv-otk;Database=otk;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
     Dim CnStr2 = "Provider=SQLOLEDB;Server=srv15;Database=pech;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
-    Dim ConnSQL, cnnPech, conn_fl, dk, d, kpr, knsp, kdef, kup, goreem
+    Dim ConnSQL, cnnPech, conn_fl, dk, d, kpr, knsp, kdef, kup, goreem, Contr1
+    Dim Contrl_fl = 0
     ''' <summary>
     ''' 
     ''' </summary>
@@ -108,15 +109,22 @@ Module Module1
         End If
         If kup > 0 Or d > 0 Then
 
-            Console.WriteLine("=============================================================================================")
+            Console.WriteLine("=", 95)
             Console.WriteLine("Возврат:")
             Console.WriteLine("Всего:      " & vbTab & vbTab & kup + d)
             Console.WriteLine("Не найдено: " & vbTab & vbTab & d)
         End If
         If goreem > 0 Then
-            Console.WriteLine("=============================================================================================")
+            Console.WriteLine("=", 95)
             Console.WriteLine("Отправлено на реэмалирование:")
             Console.WriteLine("Всего:      " & vbTab & vbTab & goreem)
+        End If
+        If conn_fl > 0 Then
+            Console.WriteLine("=", 95)
+            Console.WriteLine("=", 95)
+            Console.WriteLine("Внимание!!! Для " & conn_fl & " изделий не был установлен контролер.")
+            System.Threading.Thread.Sleep(10000)
+
         End If
         'repfl.Close
         System.Threading.Thread.Sleep(5000)
@@ -139,6 +147,10 @@ Module Module1
         Dim ruchky = rs0(2).value.ToString
         Dim pechid = rs0(3).value.ToString
         If arr(6) = "" Then arr(6) = 1
+        If arr(8) = "" Then
+            arr(8) = "0"
+            conn_fl = Contrl_fl + 1
+        End If
         If CInt(arr(6)) > 10 And CInt(arr(6)) < 20 Then
             arr(6) = arr(6) - 10
             reem = True
@@ -154,12 +166,18 @@ Module Module1
         End If
 
         If arr(7) = "" Then arr(7) = "0"
-        'sqlstr = "SELECT [Фамилия] From dbo.[Обжигальщики] WHERE "
+
         sqlstr = "Select [Фамилия] From dbo.[Мастера] Where nom =" & arr(8)
+        'MsgBox(sqlstr)
         Dim rs1 = ConnSQL.execute(sqlstr)
-        'dtsmena = CDate(rs1(0).value.ToString).ToString("yyyyMMdd")
-        'yestoday = DateAdd("d", -1, CDate(rs1(0).value.ToString)).ToString("yyyyMMdd")
-        Dim Contr1 = rs1(0).value.ToString.Trim
+        If rs1.EOF = False Then
+            Contr1 = rs1(0).value.ToString
+        Else
+            Console.WriteLine("Для изделия " + arr(2) + " неверно указан контролер и был он добавлен как " + Contr1)
+        End If
+
+
+
         'Dim Contr2 = rs1(2).value.ToString.Trim
 
         If Now.Hour < 7 Then
