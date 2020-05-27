@@ -2,14 +2,20 @@
 Imports System.Collections.Specialized
 
 Module Module1
-    Dim CnStr = "Provider=SQLOLEDB;Server=srv-otk;Database=otktmp;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
+    Dim CnStr = "Provider=SQLOLEDB;Server=srv-otk;Database=otk;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
     Dim CnStr2 = "Provider=SQLOLEDB;Server=srv15;Database=pech;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
-    Dim ConnSQL, cnnPech, conn_fl, dk, d, kpr, knsp, kup, goreem, contrl, contr1, erup, kup13
+    Dim ConnSQL, cnnPech, conn_fl, dk, d, kpr, knsp, kup, goreem, contrl, contr1, erup, kup13, kotgr
     Dim Contrl_fl = 0
     ''' <summary>
     ''' 
     ''' </summary>
     Sub Main()
+        'Dim p = Process.GetCurrentProcess()
+        'Dim proc
+        'For Each proc In Process.GetProcessesByName("otk_terminal")
+        'If proc.Id <> p.Id Then proc.Kill()
+        'Next
+
         Dim Cnins, ts1, folder, sqlstr, fl, path, buf, arr, rez
         Dim fso, i
         Dim dbins As New StringCollection
@@ -22,6 +28,7 @@ Module Module1
         dk = 0 ' кол-во дублей
         kpr = 0 ' кол-во принятых
         knsp = 0 ' кол-во несопоставленных
+        kotgr = 0 ' Отгруженные пачки
         'kup = 0 'кол-во упаковок
         'kdef = 0 ' кол дефектов упаковки
         d = 0 ' не найденых ШК22
@@ -35,7 +42,9 @@ Module Module1
         Next
         If Len(fl) < 5 Then
             Console.WriteLine("Файл данных не найден!")
-            System.Threading.Thread.Sleep(7000)
+            Console.WriteLine("Нажмите ENTER, чтобы закрыть", ConsoleColor.Green)
+            Console.ReadLine()
+            'System.Threading.Thread.Sleep(7000)
             Exit Sub
         End If
 
@@ -63,11 +72,11 @@ Module Module1
         Do While Not ts1.AtEndOfStream
             buf = ts1.ReadLine
             arr = Split(buf, ";")
-            If arr(0) = "Приемка" Then rez = parse_pr(arr)
-            If arr(0) = "Возврат" Then rez = parse_vozvr(arr)
-            If arr(0) = "НаРеэмалир" Then rez = parse_goreem(arr)
-            If arr(0) = "Упаковка" Then rez = parse_up13(arr)
-            If arr(0) = "Отгрузка" Then rez = parse_otgruzka(arr)
+            If arr(0) = "Приемка" Then rez = Parse_pr(arr)
+            If arr(0) = "Возврат" Then rez = Parse_vozvr(arr)
+            If arr(0) = "НаРеэмалир" Then rez = Parse_goreem(arr)
+            If arr(0) = "Упаковка" Then rez = Parse_up13(arr)
+            If arr(0) = "Отгрузка" Then rez = Parse_otgruzka(arr)
 
             'If UBound(arr) > 3 Then
             '    rez = parse_pr(arr)
@@ -121,17 +130,24 @@ Module Module1
             Console.WriteLine("Отправлено на реэмалирование:")
             Console.WriteLine("Всего:      " & vbTab & vbTab & goreem)
         End If
-        If kup13 > 0 Then
+        If kup13 > 0 Or erup > 0 Then
+            'If kup13 = "" Then kup13 = "0"
             Console.WriteLine("=", 95)
             Console.WriteLine("=", 95)
             Console.WriteLine("Упаковано " & kup13 & " изделий.")
-            System.Threading.Thread.Sleep(10000)
-
+            Console.WriteLine("Не найдено " & erup & " изделий.")
+            'System.Threading.Thread.Sleep(10000)
+        End If
+        If kotgr > 0 Then
+            Console.WriteLine("=", 95)
+            Console.WriteLine("=", 95)
+            Console.WriteLine("Отгружено " & kotgr & " пачек.")
         End If
         'repfl.Close
         'System.Threading.Thread.Sleep(5000)
         'Process.Start("d:\Terminal\tmp.txt", "Notepad.exe")
-
+        Console.WriteLine("-", 95)
+        Console.WriteLine("Нажмите ENTER, чтобы закрыть", ConsoleColor.Green)
         Console.ReadLine()
 
 
@@ -149,8 +165,8 @@ Module Module1
         Dim ruchky = rs0(2).value.ToString
         Dim pechid = rs0(3).value.ToString
         If arr(6 + 1) = "" Then arr(6 + 1) = 1
-        If arr(contrl) = "" Then
-            arr(contrl) = "0"
+        If contrl = "" Then
+            contrl = "0"
             conn_fl = Contrl_fl + 1
         End If
         If CInt(arr(6 + 1)) > 10 And CInt(arr(6 + 1)) < 20 Then
@@ -195,7 +211,7 @@ Module Module1
         yestoday = DateAdd("d", -1, dt).ToString("yyyyMMdd")
         dtsmena = CDate(dt.ToString).ToString("yyyyMMdd")
 
-        sqlstr = "Select [nom_pech], [Pomochnik], [Емкость_верх], [Емкость_борт], [Емкость_низ], [Мастер], [Бригада], [Смена], [Дата] from dbo.[Сопоставление] WHERE [nom_obj]=" & arr(4) & " And ([Дата]='" & dtsmena & "' OR ([Дата]='" & yestoday & "' AND [Смена]=2 AND CONVERT (time, getdate())<'12:00:00' AND CONVERT (time, getdate())>'07:00:00' ))"
+        sqlstr = "Select [nom_pech], [Pomochnik], [Емкость_верх], [Емкость_борт], [Емкость_низ], [Мастер], [Бригада], [Смена], [Дата] from dbo.[Сопоставление] WHERE [nom_obj]=" & arr(4 + 1) & " And ([Дата]='" & dtsmena & "' OR ([Дата]='" & yestoday & "' AND [Смена]=2 AND CONVERT (time, getdate())<'12:00:00' AND CONVERT (time, getdate())>'07:00:00' ))"
         'MsgBox(sqlstr)
         Dim nom_pechi = "Null"
         Dim pom = "Null"
@@ -244,7 +260,7 @@ Module Module1
         End If
         If InStr(arr(7 + 1), ".") > 0 Then
             def(0) = Left(arr(7 + 1), InStr(arr(7 + 1), ".") - 1)
-            def(1) = Right(arr(7 + 1), Len(arr(7)) - InStr(arr(7 + 1), "."))
+            def(1) = Right(arr(7 + 1), Len(arr(7 + 1)) - InStr(arr(7 + 1), "."))
             If def(1) = "" Then def(1) = "null"
         Else
             def(0) = arr(7 + 1)
@@ -312,19 +328,21 @@ Module Module1
     End Function
 
     Function Parse_goreem(arr As Array)
+        Dim rez As New StringCollection
         Dim sqlstr = "Update dbo.Изделия SET goreem =3, goreamal='true' WHERE [shtr_kod]=" & arr(0 + 1)
         goreem = goreem + 1
-        Return sqlstr
+        rez.Add(sqlstr)
+        Return rez
     End Function
 
     Function Parse_up13(arr As Array)
+        Dim rez As New StringCollection
         Dim sqlstr = "SELECT [shtr_kod], [Сорт],[sort13] FROM dbo.[Изделия] WHERE [shtr_kod]=" & arr(2 + 1)
         Dim rs1 = ConnSQL.Execute(sqlstr)
         If rs1.EOF = True Then
             Console.WriteLine(arr(2 + 1) & " не существует")
             erup = erup + 1
             Return ""
-            Exit Function
         End If
         Dim countrs = rs1.RecordCount
         If countrs > 1 Then Console.WriteLine(arr(2 + 1) + "     Дубль     " + countrs)
@@ -337,37 +355,39 @@ Module Module1
             sqlstr = "Update dbo.Изделия SET [DataUp] ='" & CDate(arr(0 + 1) & " " & arr(1 + 1)) & "', [NomUp] =" & Mid(arr(3 + 1), 2, 11) & ", [Sort13]=" & sort2 & ", [Control_13_nom]=" & contrl & " WHERE [shtr_kod]=" & arr(2 + 1)
             kup13 = kup13 + 1
             ConnSQL.execute("Update dbo.sklad SET [13skl]='1' WHERE [shtr]=" & arr(2 + 1))
-            Return sqlstr
+            rez.Add(sqlstr)
         Else
             Console.WriteLine("Некорректный номер упаковки: " + arr(3 + 1))
-            Return ""
-            Exit Function
-        End If
 
+        End If
+        Return rez
 
     End Function
 
 
     Function Parse_otgruzka(arr As Array)
+        Dim rez As New StringCollection
 
-        If arr(2 + 1).Substring(0, 1 = "2") Then
-            arr(2 + 1) = arr(2 + 1).Substring(1, 11).TrimStart(0)
+        If arr(4).Substring(0, 1).ToString() = "2" Then
+            arr(4) = arr(4).Substring(1, 11)
         Else
             Return ""
             Exit Function
         End If
 
-        Dim inn = arr(3 + 1).Substring(0, 12).ToString()
-        Dim nar = arr(3 + 1).Substring(12, 5).TrimStart(0).ToString()
-        Dim year = arr(3 + 1).Substring(17, 4).TrimStart(0).ToString()
+        Dim inn = arr(3).Substring(0, 12).ToString()
+        Dim nar = arr(3).Substring(12, 5).ToString()
+        Dim year = arr(3).Substring(17, 4).ToString()
         Dim kpp = "000000000"
-        If arr(3 + 1).Length > 21 Then kpp = arr(3 + 1).Substring(21, 9)
+        If arr(3).Length > 21 Then kpp = arr(3).Substring(21)
         If (nar = "") Then nar = "0"
         Dim dt = arr(0 + 1) + " " + arr(1 + 1)
         Dim dt1 = Convert.ToDateTime(dt)
-        Dim sqlstr = "Update dbo.Изделия SET [otgr_data]='" + dt1.ToString() + "', [otgr_inn]='" + inn + kpp + "', [otgr_nar]='" + nar + "/" + year + "' WHERE [NomUp]=" + arr(2 + 1)
+        Dim sqlstr = "Update dbo.Изделия SET [otgr_data]='" + dt1.ToString() + "', [otgr_inn]='" + inn + kpp + "', [otgr_nar]='" + nar + "/" + year + "' WHERE [NomUp]=" + arr(4)
         'Console.WriteLine(inn + kpp + "    " + nar + "      " + year + "     " + arr[2]);
-        Return sqlstr
+        rez.Add(sqlstr)
+        kotgr += 1
+        Return rez
 
     End Function
 
