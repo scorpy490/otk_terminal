@@ -16,9 +16,10 @@ Module Module1
         'If proc.Id <> p.Id Then proc.Kill()
         'Next
 
-        Dim Cnins, ts1, folder, sqlstr, fl, path, buf, arr, rez
+        Dim Cnins, ts1, folder, sqlstr, fl, path, buf, arr, rez, up_rez
         Dim fso, i
         Dim dbins As New StringCollection
+        Dim upak_ins As New StringCollection
         goreem = 0
         conn_fl = True
         fso = CreateObject("Scripting.FileSystemObject")
@@ -41,6 +42,7 @@ Module Module1
             End If
         Next
         If Len(fl) < 5 Then
+            If MsgBox("Файл данных не найден!", MsgBoxStyle.Information, "Нет данных") = vbOK Then Exit Sub
             Console.WriteLine("Файл данных не найден!")
             Console.WriteLine("Нажмите ENTER, чтобы закрыть", ConsoleColor.Green)
             Console.ReadLine()
@@ -68,27 +70,25 @@ Module Module1
         End Try
 
         ts1 = fso.OpenTextFile(path, 1, False)
-        rez = ""
         Do While Not ts1.AtEndOfStream
+            rez = ""
+            up_rez = ""
             buf = ts1.ReadLine
             arr = Split(buf, ";")
             If arr(0) = "Приемка" Then rez = Parse_pr(arr)
-            If arr(0) = "Возврат" Then rez = Parse_vozvr(arr)
-            If arr(0) = "НаРеэмалир" Then rez = Parse_goreem(arr)
-            If arr(0) = "Упаковка" Then rez = Parse_up13(arr)
-            If arr(0) = "Отгрузка" Then rez = Parse_otgruzka(arr)
+            If arr(0) = "Возврат" Then up_rez = Parse_vozvr(arr)
+            If arr(0) = "НаРеэмалир" Then up_rez = Parse_goreem(arr)
+            If arr(0) = "Упаковка" Then up_rez = Parse_up13(arr)
+            If arr(0) = "Отгрузка" Then up_rez = Parse_otgruzka(arr)
 
-            'If UBound(arr) > 3 Then
-            '    rez = parse_pr(arr)
-            'ElseIf UBound(arr) = 3 Then
-            '    rez = parse_vozvr(arr)
-            'Else
-            '    rez = parse_goreem(arr)
-            'End If
-            If rez Is Nothing Then Continue Do
+            If (rez Is Nothing) And (up_rez Is Nothing) Then Continue Do
             For Each i In rez
                 dbins.Add(i)
                 'repfl.WriteLine(i)
+            Next
+
+            For Each i In up_rez
+                upak_ins.Add(i)
             Next
 
         Loop
@@ -106,6 +106,15 @@ Module Module1
             'repfl.WriteLine(i)
         Next
         Cnins.CommitTrans
+
+        Cnins.BeginTrans
+        For Each i In upak_ins
+            'Console.WriteLine(i)
+            sqlstr = i
+            Cnins.execute(sqlstr)
+        Next
+        Cnins.CommitTrans
+
         Cnins.Close
         ts1.Close
         sqlstr = "D:\Terminal\Arhiv\" & fl
@@ -322,7 +331,7 @@ Module Module1
         sqlstr = "Update dbo.pretenz_van SET [vzvr]='true'  WHERE [shtr]=" & arr(2 + 1)
         rez.Add(sqlstr)
         'ConnSQL.Execute(sqlstr)
-        sqlstr = "Update dbo.Изделия SET [Data_vozvr] ='" & CDate(arr(0) & " " & arr(1 + 1)) & "', [vozvr_inn] ='" & innkpp & "' WHERE [shtr_kod]=" & arr(2 + 1)
+        sqlstr = "Update dbo.Изделия SET [Data_vozvr] ='" & CDate(arr(1) & " " & arr(1 + 1)) & "', [vozvr_inn] ='" & innkpp & "' WHERE [shtr_kod]=" & arr(2 + 1)
         rez.Add(sqlstr)
         Return rez
     End Function
