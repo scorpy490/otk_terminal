@@ -166,9 +166,17 @@ Module Module1
         Dim rez As New StringCollection
         Dim reem, ps, dt, smena, yestoday, dtsmena, kodObj, famobj, q1
         Dim def(2)
-        Dim sqlstr = "Select [TYPE], [razm], [ruchky],[pechid] from dbo.typeizd where [shtr]=" & arr(3 + 1)
+        Dim sqlstr = "Select [TYPE], [razm], [ruchky],[pechid] from dbo.typeizd where [shtr]=" & arr(4)
         'MsgBox(sqlstr)
         Dim rs0 = ConnSQL.execute(sqlstr)
+        Dim contrlEMO_ID = "0"
+        If rs0.EOF = True Then
+            Console.BackgroundColor = ConsoleColor.White
+            Console.ForegroundColor = ConsoleColor.Red
+            Console.WriteLine(" Изделие " + arr(3) + " Неcуществующий штрихкод изделия: " + arr(4) + " Запись удалена!")
+            Console.ResetColor()
+            Return ""
+        End If
         Dim typestr = rs0(0).value.ToString.Trim
         Dim razm = rs0(1).value.ToString
         Dim ruchky = rs0(2).value.ToString
@@ -178,12 +186,12 @@ Module Module1
             contrl = "0"
             conn_fl = Contrl_fl + 1
         End If
-        If CInt(arr(6 + 1)) > 10 And CInt(arr(6 + 1)) < 20 Then
-            arr(6 + 1) = arr(6 + 1) - 10
+        If CInt(arr(7)) > 10 And CInt(arr(7)) < 20 Then
+            arr(7) = arr(7) - 10
             reem = True
             ps = False
-        ElseIf CInt(arr(6 + 1)) > 20 Then
-            arr(6) = arr(6 + 1) - 20
+        ElseIf CInt(arr(7)) > 20 Then
+            arr(7) = arr(7) - 20
             ps = True
             reem = False
 
@@ -192,15 +200,16 @@ Module Module1
             ps = False
         End If
 
-        If arr(7 + 1) = "" Then arr(7 + 1) = "0"
+        If arr(8) = "" Then arr(8) = "0"
 
-        sqlstr = "Select [Фамилия] From dbo.[Мастера] Where nom =" & contrl
+        sqlstr = "Select [Фамилия], [Код] From dbo.[Мастера] Where nom =" & contrl
         'MsgBox(sqlstr)
         Dim rs1 = ConnSQL.execute(sqlstr)
         If rs1.EOF = False Then
             contr1 = rs1(0).value.ToString
+            contrlEMO_ID = rs1(1).value.ToString
         Else
-            Console.WriteLine("Для изделия " + arr(2 + 1) + " неверно указан контролер")
+            Console.WriteLine("Для изделия " + arr(3) + " неверно указан контролер")
         End If
 
 
@@ -309,7 +318,7 @@ Module Module1
             Loop
         End If
         sqlstr = "Insert Into dbo.Изделия ([Номер_бригады],[КодОбж],[obj_str],[Помощник],[Дата_период], [Дата],  [Контролер ОТК], [Мастер смены], [Номер_печи], [Реэмаоирование], [Сорт], [ID_Brak], [shtr_kod], [Смена], [Емкость],[Емкость_верх], [Емкость_борт], [Порядк_номер_изд], [term_pr], [dop_param], [pskstr], [kod_izd], [ContrEMO_ID]) SELECT " _
-            & brig + "," + kodObj + ",'" + famobj + "' , '" + pom + "' ,'" + dt & "' ,'" & dtsmena.ToString & "','" & contr1 & "' ,'" & mas & "' ," & nom_pechi + " ,'" + reem.ToString + "' ," + arr(6 + 1) + " ," + def(0) + " ," + arr(2 + 1) + ", " + smena + ", " + em_down + "," + em_up + "," + em_bort + "," + arr(5 + 1) & ", 'True'," & def(1) & ",'" & ps.ToString & "'," + arr(3 + 1) & "," + contrl
+            & brig + "," + kodObj + ",'" + famobj + "' , '" + pom + "' ,'" + dt & "' ,'" & dtsmena.ToString & "','" & contr1 & "' ,'" & mas & "' ," & nom_pechi + " ,'" + reem.ToString + "' ," + arr(6 + 1) + " ," + def(0) + " ," + arr(2 + 1) + ", " + smena + ", " + em_down + "," + em_up + "," + em_bort + "," + arr(5 + 1) & ", 'True'," & def(1) & ",'" & ps.ToString & "'," + arr(3 + 1) & "," + ContrlEMO_ID
         rez.Add(sqlstr)
         Return rez
 
@@ -318,14 +327,14 @@ Module Module1
     Function Parse_vozvr(arr As Array)
         Dim rez As New StringCollection
         Dim innkpp
-        Dim sqlstr = "SELECT [shtr_kod] FROM dbo.[Изделия] WHERE [shtr_kod]=" & arr(2 + 1)
+        Dim sqlstr = "SELECT [shtr_kod] FROM dbo.[Изделия] WHERE [shtr_kod]=" & arr(3)
         If ConnSQL.Execute(sqlstr).EOF = True Then
             'Console.WriteLine(arr(2) & " не существует")
             'errfl.WriteLine(CDate(arr(0) & " " & arr(1)) & vbTab & Now.ToShortTimeString & vbTab & arr(2) & " не существует")
             d = d + 1
             Return rez
         End If
-        sqlstr = "SELECT [innkpp] FROM dbo.[pretenz_kontr] WHERE [id]=" & arr(3 + 1)
+        sqlstr = "SELECT [innkpp] FROM dbo.[pretenz_kontr] WHERE [id]=" & arr(4)
         Dim rs5 = ConnSQL.Execute(sqlstr)
         If rs5.EOF = True Then innkpp = "0" Else innkpp = rs5(0).Value.ToString
         sqlstr = "Update dbo.pretenz_van SET [vzvr]='true'  WHERE [shtr]=" & arr(2 + 1)
@@ -361,7 +370,7 @@ Module Module1
         If sort2 = "" Then sort2 = sort
 
         If Left(arr(3 + 1), 1) = 2 Then
-            sqlstr = "Update dbo.Изделия SET [DataUp] ='" & CDate(arr(0 + 1) & " " & arr(1 + 1)) & "', [NomUp] =" & Mid(arr(3 + 1), 2, 11) & ", [Sort13]=" & sort2 & ", [Control_13_nom]=" & contrl & " WHERE [shtr_kod]=" & arr(2 + 1)
+            sqlstr = "Update dbo.Изделия SET [DataUp] ='" & CDate(arr(0 + 1) & " " & arr(1 + 1)) & "', [NomUp] =" & Mid(arr(3 + 1), 2, 11) & ", [Sort13]=" & sort2 & ", [Control_13_nom]=" & contrl & ", [up_skl]=1 WHERE [shtr_kod]=" & arr(3)
             kup13 = kup13 + 1
             ConnSQL.execute("Update dbo.sklad SET [13skl]='1' WHERE [shtr]=" & arr(2 + 1))
             rez.Add(sqlstr)
