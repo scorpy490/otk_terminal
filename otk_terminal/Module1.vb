@@ -6,6 +6,7 @@ Module Module1
     Dim CnStr2 = "Provider=SQLOLEDB;Server=srv15;Database=pech;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
     Dim ConnSQL, cnnPech, conn_fl, dk, d, kpr, knsp, kup, goreem, contrl, contr1, erup, kup13, kotgr
     Dim Contrl_fl = 0
+    Dim PatchExp = "d:\Terminal\out"
     ''' <summary>
     ''' 
     ''' </summary>
@@ -33,7 +34,7 @@ Module Module1
         'kup = 0 'кол-во упаковок
         'kdef = 0 ' кол дефектов упаковки
         d = 0 ' не найденых ШК22
-        folder = fso.GetFolder("d:\Terminal\out")
+        folder = fso.GetFolder(PatchExp)
         For Each file In folder.Files
             If Left(file.Name, 3) = "emo" And Right(file.name, 4) = ".txt" Then
                 path = file
@@ -54,9 +55,6 @@ Module Module1
         contrl = Console.ReadLine
 
 
-
-
-        'repfl = fso.OpenTextFile("d:\Terminal\tmp.txt", 2, True)
         ConnSQL = CreateObject("ADODB.Connection")
         cnnPech = CreateObject("ADODB.Connection")
         ConnSQL.ConnectionString = CnStr
@@ -64,7 +62,7 @@ Module Module1
         ConnSQL.Open
         Try
             cnnPech.Open
-        Catch ex As Exception
+        Catch
             conn_fl = False
             Console.WriteLine("Не удается получить данные с печей!")
         End Try
@@ -229,7 +227,7 @@ Module Module1
         yestoday = DateAdd("d", -1, dt).ToString("yyyyMMdd")
         dtsmena = CDate(dt.ToString).ToString("yyyyMMdd")
 
-        sqlstr = "Select [nom_pech], [Pomochnik], [Емкость_верх], [Емкость_борт], [Емкость_низ], [Мастер], [Бригада], [Смена], [Дата] from dbo.[Сопоставление] WHERE [nom_obj]=" & arr(4 + 1) & " And ([Дата]='" & dtsmena & "' OR ([Дата]='" & yestoday & "' AND [Смена]=2 AND CONVERT (time, getdate())<'12:00:00' AND CONVERT (time, getdate())>'07:00:00' ))"
+        sqlstr = "Select [nom_pech], [Pomochnik], [Емкость_верх], [Емкость_борт], [Емкость_низ], [Мастер], [Бригада], [Смена], [Дата], [kod_pom] from dbo.[Сопоставление] WHERE [nom_obj]=" & arr(4 + 1) & " And ([Дата]='" & dtsmena & "' OR ([Дата]='" & yestoday & "' AND [Смена]=2 AND CONVERT (time, getdate())<'12:00:00' AND CONVERT (time, getdate())>'07:00:00' ))"
         'MsgBox(sqlstr)
         Dim nom_pechi = "Null"
         Dim pom = "Null"
@@ -239,6 +237,7 @@ Module Module1
         Dim mas = "Null"
         Dim brig = "Null"
         Dim rs2 = ConnSQL.execute(sqlstr)
+        Dim kodpom = "Null"
         If rs2.EOF = False Then
             nom_pechi = rs2(0).value.ToString
             pom = rs2(1).value.ToString.Trim
@@ -249,6 +248,7 @@ Module Module1
             brig = rs2(6).value.ToString
             smena = rs2(7).value.ToString
             dtsmena = CDate(rs2(8).value.ToString).ToString("yyyyMMdd")
+            kodpom = rs2(9).value.ToString
 
             'MsgBox(nom_pechi.value.ToString)
         Else
@@ -263,6 +263,7 @@ Module Module1
         If em_down = "" Then em_down = "NULL"
         'If mas = "" Then mas = "NULL"
         If brig = "" Then brig = "NULL"
+        If kodpom = "" Then kodpom = "NULL"
 
 
         sqlstr = "SELECT [ОбжКод], [Фамилия] From dbo.[Обжигальщики] WHere [Номер]=" & arr(4 + 1)
@@ -302,7 +303,7 @@ Module Module1
         If conn_fl = True Then
             'dt = DateAdd(DateInterval.Hour, -12, dt)
             sqlstr = "SELECT [DATA_TIME],[ID_OBJIG],[TIME_OBJIG],[ID_PECH],[ID_OBJIGALSHIC],[TIP_VANNA],[COL_VANNA],[TEMP],[TEMP_MIN],[TEMP_AVG],[TEMP_MAX],[TIME_ITERATION] FROM [pech].[dbo].[WORK_PECH] WHERE [ID_OBJIGALSHIC]=" _
-            & arr(4 + 1) & " AND [ID_PECH]=" & nom_pechi & " AND [DATA_TIME] >'" & DateAdd(DateInterval.Hour, -12, dt) & "' AND [COL_VANNA]=" & arr(5 + 1)
+            & arr(4 + 1) & " AND [ID_PECH]=" & nom_pechi & " AND [DATA_TIME] >'" & DateAdd(DateInterval.Hour, -12, dt) & "' AND [COL_VANNA]=" & arr(6)
             q1 = cnnPech.Execute(sqlstr)
             Do While Not q1.EOF
                 Dim a7 = Replace(q1(7).value.ToString, ",", ".")
@@ -312,13 +313,11 @@ Module Module1
                 'Console.WriteLine(q1(0).value.ToString & vbTab & q1(1).value.ToString & vbTab & q1(2).value.ToString & vbTab & q1(3).value.ToString & vbTab & q1(4).value.ToString & vbTab & q1(5).value.ToString & vbTab & q1(6).value.ToString & vbTab & q1(7).value.ToString)
                 sqlstr = "INSERT INTO [dbo].[WORK_PECH] ([DATA_TIME],[ID_OBJIG],[TIME_OBJIG],[ID_PECH],[ID_OBJIGALSHIC],[TIP_VANNA],[COL_VANNA],[TEMP],[TEMP_MIN],[TEMP_AVG],[TEMP_MAX],[TIME_ITERATION],[shtr]) VALUES ('" & q1(0).value & "'," & q1(1).value & "," & q1(2).value & "," & q1(3).value & "," & q1(4).value & "," & q1(5).value & "," & q1(6).value & "," & a7 & "," & a8 & "," & a9 & "," & a10 & "," & q1(11).value & "," & arr(2 + 1) & ")"
                 rez.Add(sqlstr)
-                'Console.WriteLine(sqlstr)
-                'ConnSQL.Execute = sqlstr
                 q1.MoveNext
             Loop
         End If
-        sqlstr = "Insert Into dbo.Изделия ([Номер_бригады],[КодОбж],[obj_str],[Помощник],[Дата_период], [Дата],  [Контролер ОТК], [Мастер смены], [Номер_печи], [Реэмаоирование], [Сорт], [ID_Brak], [shtr_kod], [Смена], [Емкость],[Емкость_верх], [Емкость_борт], [Порядк_номер_изд], [term_pr], [dop_param], [pskstr], [kod_izd], [ContrEMO_ID]) SELECT " _
-            & brig + "," + kodObj + ",'" + famobj + "' , '" + pom + "' ,'" + dt & "' ,'" & dtsmena.ToString & "','" & contr1 & "' ,'" & mas & "' ," & nom_pechi + " ,'" + reem.ToString + "' ," + arr(6 + 1) + " ," + def(0) + " ," + arr(2 + 1) + ", " + smena + ", " + em_down + "," + em_up + "," + em_bort + "," + arr(5 + 1) & ", 'True'," & def(1) & ",'" & ps.ToString & "'," + arr(3 + 1) & "," + ContrlEMO_ID
+        sqlstr = "Insert Into dbo.Изделия ([Номер_бригады],[КодОбж],[Дата_период], [Дата], [Мастер смены], [Номер_печи], [Реэмаоирование], [Сорт], [ID_Brak], [shtr_kod], [Смена], [Емкость],[Емкость_верх], [Емкость_борт], [Порядк_номер_изд], [term_pr], [dop_param], [pskstr], [kod_izd], [ContrEMO_ID], [КодПом]) SELECT " _
+            & brig + "," + kodObj + ",'" + dt & "','" & dtsmena.ToString & "','" & mas & "' ," & nom_pechi + " ,'" + reem.ToString + "' ," + arr(7) + " ," + def(0) + " ," + arr(3) + ", " + smena + ", " + em_down + "," + em_up + "," + em_bort + "," + arr(6) & ", 'True'," & def(1) & ",'" & ps.ToString & "'," + arr(4) & "," + contrlEMO_ID & "," + kodpom
         rez.Add(sqlstr)
         Return rez
 
