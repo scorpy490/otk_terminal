@@ -1,16 +1,20 @@
 ﻿'Imports System.Data.SqlClient
 Imports System.Collections.Specialized
+Imports System.IO
 
 Module Module1
     Dim CnStr = "Provider=SQLOLEDB;Server=srv-otk;Database=otk;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
     Dim CnStr2 = "Provider=SQLOLEDB;Server=srv15;Database=pech;Trusted_Connection=yes;Integrated Security=SSPI;Persist Security Info=False"
     Dim ConnSQL, cnnPech, conn_fl, dk, d, kpr, knsp, kup, goreem, contrl, contr1, erup, kup13, kotgr
     Dim Contrl_fl = 0
-    Dim PatchExp = "d:\Terminal\out"
+    Dim fullPath As String = System.Reflection.Assembly.GetExecutingAssembly().Location
+    Dim PatchOut = System.IO.Path.GetDirectoryName(fullPath) & "\out\"
+    Dim PatchArhiv = System.IO.Path.GetDirectoryName(fullPath) & "\arhiv\"
     ''' <summary>
     ''' 
     ''' </summary>
     Sub Main()
+        'Console.WriteLine(PatchOut)
         'Dim p = Process.GetCurrentProcess()
         'Dim proc
         'For Each proc In Process.GetProcessesByName("otk_terminal")
@@ -34,7 +38,16 @@ Module Module1
         'kup = 0 'кол-во упаковок
         'kdef = 0 ' кол дефектов упаковки
         d = 0 ' не найденых ШК22
-        folder = fso.GetFolder(PatchExp)
+
+        If Directory.Exists(PatchOut) = False Then
+            Directory.CreateDirectory("OUT")
+        End If
+
+        If Directory.Exists(PatchArhiv) = False Then
+            Directory.CreateDirectory("Arhiv")
+        End If
+
+        folder = fso.GetFolder(PatchOut)
         For Each file In folder.Files
             If Left(file.Name, 3) = "emo" And Right(file.name, 4) = ".txt" Then
                 path = file
@@ -60,12 +73,7 @@ Module Module1
         ConnSQL.ConnectionString = CnStr
         cnnPech.ConnectionString = CnStr2
         ConnSQL.Open
-        Try
-            cnnPech.Open
-        Catch
-            conn_fl = False
-            Console.WriteLine("Не удается получить данные с печей!")
-        End Try
+
 
         ts1 = fso.OpenTextFile(path, 1, False)
         Do While Not ts1.AtEndOfStream
@@ -92,7 +100,6 @@ Module Module1
         Loop
 
         ConnSQL.Close
-        If conn_fl = True Then cnnPech.Close
         Cnins = CreateObject("ADODB.Connection")
         Cnins.ConnectionString = CnStr
         Cnins.Open
@@ -115,7 +122,9 @@ Module Module1
 
         Cnins.Close
         ts1.Close
-        sqlstr = "D:\Terminal\Arhiv\" & fl
+        'sqlstr = "c:\Terminal\Arhiv\" & fl
+        sqlstr = PatchArhiv & fl
+
         ts1 = fso.GetFile(path)
         ts1.Move(sqlstr)
 
@@ -180,10 +189,7 @@ Module Module1
         Dim ruchky = rs0(2).value.ToString
         Dim pechid = rs0(3).value.ToString
         If arr(6 + 1) = "" Then arr(6 + 1) = 1
-        If contrl = "" Then
-            contrl = "0"
-            conn_fl = Contrl_fl + 1
-        End If
+        If contrl = "" Then contrl = "0"
         If CInt(arr(7)) > 10 And CInt(arr(7)) < 20 Then
             arr(7) = arr(7) - 10
             reem = True
@@ -300,22 +306,10 @@ Module Module1
 
         kpr = kpr + 1
         'Данные печи
-        If conn_fl = True Then
-            'dt = DateAdd(DateInterval.Hour, -12, dt)
-            sqlstr = "SELECT [DATA_TIME],[ID_OBJIG],[TIME_OBJIG],[ID_PECH],[ID_OBJIGALSHIC],[TIP_VANNA],[COL_VANNA],[TEMP],[TEMP_MIN],[TEMP_AVG],[TEMP_MAX],[TIME_ITERATION] FROM [pech].[dbo].[WORK_PECH] WHERE [ID_OBJIGALSHIC]=" _
-            & arr(4 + 1) & " AND [ID_PECH]=" & nom_pechi & " AND [DATA_TIME] >'" & DateAdd(DateInterval.Hour, -12, dt) & "' AND [COL_VANNA]=" & arr(6)
-            q1 = cnnPech.Execute(sqlstr)
-            Do While Not q1.EOF
-                Dim a7 = Replace(q1(7).value.ToString, ",", ".")
-                Dim a8 = Replace(q1(8).value.ToString, ",", ".")
-                Dim a9 = Replace(q1(9).value.ToString, ",", ".")
-                Dim a10 = Replace(q1(10).value.ToString, ",", ".")
-                'Console.WriteLine(q1(0).value.ToString & vbTab & q1(1).value.ToString & vbTab & q1(2).value.ToString & vbTab & q1(3).value.ToString & vbTab & q1(4).value.ToString & vbTab & q1(5).value.ToString & vbTab & q1(6).value.ToString & vbTab & q1(7).value.ToString)
-                sqlstr = "INSERT INTO [dbo].[WORK_PECH] ([DATA_TIME],[ID_OBJIG],[TIME_OBJIG],[ID_PECH],[ID_OBJIGALSHIC],[TIP_VANNA],[COL_VANNA],[TEMP],[TEMP_MIN],[TEMP_AVG],[TEMP_MAX],[TIME_ITERATION],[shtr]) VALUES ('" & q1(0).value & "'," & q1(1).value & "," & q1(2).value & "," & q1(3).value & "," & q1(4).value & "," & q1(5).value & "," & q1(6).value & "," & a7 & "," & a8 & "," & a9 & "," & a10 & "," & q1(11).value & "," & arr(2 + 1) & ")"
-                rez.Add(sqlstr)
-                q1.MoveNext
-            Loop
-        End If
+        'dt = DateAdd(DateInterval.Hour, -12, dt)
+        sqlstr = "Update [dbo].[WORK_PECH] SET [shtr] =" & arr(3) & " WHERE [ID_OBJIGALSHIC]=" & arr(5) & " AND [ID_PECH]=" & nom_pechi & " AND [DATA_TIME] >'" & DateAdd(DateInterval.Hour, -12, dt) & "' AND [COL_VANNA]=" & arr(6)
+        q1 = ConnSQL.Execute(sqlstr)
+
         sqlstr = "Insert Into dbo.Изделия ([Номер_бригады],[КодОбж],[Дата_период], [Дата], [Мастер смены], [Номер_печи], [Реэмаоирование], [Сорт], [ID_Brak], [shtr_kod], [Смена], [Емкость],[Емкость_верх], [Емкость_борт], [Порядк_номер_изд], [term_pr], [dop_param], [pskstr], [kod_izd], [ContrEMO_ID], [КодПом]) SELECT " _
             & brig + "," + kodObj + ",'" + dt & "','" & dtsmena.ToString & "','" & mas & "' ," & nom_pechi + " ,'" + reem.ToString + "' ," + arr(7) + " ," + def(0) + " ," + arr(3) + ", " + smena + ", " + em_down + "," + em_up + "," + em_bort + "," + arr(6) & ", 'True'," & def(1) & ",'" & ps.ToString & "'," + arr(4) & "," + contrlEMO_ID & "," + kodpom
         rez.Add(sqlstr)
@@ -357,7 +351,7 @@ Module Module1
         Dim sqlstr = "SELECT [shtr_kod], [Сорт],[sort13] FROM dbo.[Изделия] WHERE [shtr_kod]=" & arr(2 + 1)
         Dim rs1 = ConnSQL.Execute(sqlstr)
         If rs1.EOF = True Then
-            Console.WriteLine(arr(2 + 1) & " не существует")
+            Console.WriteLine(arr(3) & " не существует")
             erup = erup + 1
             Return ""
         End If
